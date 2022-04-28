@@ -7,7 +7,7 @@
   "x-taxi-client-qos": {
     "taxi-config": "SUPPORTAI_API_CLIENT_QOS"
   },
-  "url": "http://api.yandexai.mts-corp.ru",
+  
   "paths": {
     "/supportai-api/v1/support": {
       "post": {
