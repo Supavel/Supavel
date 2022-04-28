@@ -1,1 +1,437 @@
-
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0",
+    "title": "SupportAI API"
+  },
+  "x-taxi-client-qos": {
+    "taxi-config": "SUPPORTAI_API_CLIENT_QOS"
+  },
+  "servers": "http://api.yandexai.mts-corp.ru",
+  "paths": {
+    "/supportai-api/v1/support": {
+      "post": {
+        "summary": "Рекомендация действия в ответ на действие пользователя",
+        "operationId": "PostSupport",
+        "x-taxi-middlewares": {
+          "tvm": false
+        },
+        "x-taxi-py3-middlewares": {
+          "api_token_middleware": true
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ApiKey"
+          },
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ошибка авторизации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ApiKey": {
+        "description": "Секретный токен клиента",
+        "in": "header",
+        "name": "X-YaTaxi-API-Key",
+        "schema": {
+          "type": "string"
+        },
+        "required": false
+      },
+      "ProjectId": {
+        "description": "Идентификатор проекта",
+        "in": "query",
+        "name": "project_id",
+        "schema": {
+          "type": "string"
+        },
+        "required": true
+      }
+    },
+    "schemas": {
+      "Reply": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "Close": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "Defer": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "time_sec": {
+            "description": "Время в секундах, на которое надо отложить разбор",
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "time_sec"
+        ]
+      },
+      "Forward": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "line": {
+            "description": "Линия, в которую надо переслать запрос",
+            "type": "string"
+          }
+        },
+        "required": [
+          "line"
+        ]
+      },
+      "Tag": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "add": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "add"
+        ]
+      },
+      "Suggest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "texts": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "texts"
+        ]
+      },
+      "TopicProbability": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "topic_name": {
+            "type": "string"
+          },
+          "probability": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "topic_name",
+          "probability"
+        ]
+      },
+      "Feature": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ]
+      },
+      "ResponseFeatures": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "most_probable_topic": {
+            "description": "наиболее вероятная тематика обращения",
+            "type": "string"
+          },
+          "sure_topic": {
+            "description": "наиболее вероятная тематика обращения, если ее вероятность превышает порог уверенности, иначе None",
+            "type": "string"
+          },
+          "suggest": {
+            "$ref": "#/components/schemas/Suggest"
+          },
+          "probabilities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopicProbability"
+            }
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Feature"
+            }
+          }
+        },
+        "required": [
+          "most_probable_topic",
+          "probabilities"
+        ]
+      },
+      "Attachment": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Приложение к сообщению",
+        "properties": {
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Feature"
+            }
+          }
+        },
+        "required": [
+          "features"
+        ]
+      },
+      "Message": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "attachments": {
+            "type": "array",
+            "description": "список прикрепленных файлов",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            }
+          },
+          "author": {
+            "type": "string",
+            "enum": [
+              "support",
+              "user",
+              "ai"
+            ],
+            "default": "user"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "language": {
+            "type": "string",
+            "default": "ru",
+            "description": "код языка в формате, описанным https://yandex.ru/dev/translate/doc/dg/concepts/api-overview.html/"
+          },
+          "reply_to": {
+            "type": "array",
+            "description": "список id выбранных сообщений, для которых данное является ответом",
+            "items": {
+              "type": "string"
+            }
+          },
+          "text": {
+            "type": "string"
+          },
+          "topics": {
+            "description": "Идентификаторы шаблонного ответа, нужно для обучения модели",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Feature"
+            }
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "Action": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Feature"
+            }
+          }
+        }
+      },
+      "Dialog": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "messages": {
+            "description": "Последовательность сообщений, в конце списка самые свежие\n",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "messages"
+        ]
+      },
+      "UserSatisfaction": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "five_point_rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          }
+        },
+        "required": [
+          "five_point_rating"
+        ]
+      },
+      "SupportRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "chat_id": {
+            "type": "string"
+          },
+          "dialog": {
+            "$ref": "#/components/schemas/Dialog"
+          },
+          "actions": {
+            "description": "Последовательность действий, в конце списка самые свежие\n",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Action"
+            }
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Feature"
+            }
+          },
+          "user_satisfaction": {
+            "$ref": "#/components/schemas/UserSatisfaction"
+          },
+          "feedback": {
+            "description": "Если true, то на запрос отдается пустой ответ\nЗапрос не учитывается в статистике\nИспользуется для обратной связи\n",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "dialog",
+          "features"
+        ]
+      },
+      "SupportResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "reply": {
+            "$ref": "#/components/schemas/Reply"
+          },
+          "close": {
+            "$ref": "#/components/schemas/Close"
+          },
+          "defer": {
+            "$ref": "#/components/schemas/Defer"
+          },
+          "forward": {
+            "$ref": "#/components/schemas/Forward"
+          },
+          "tag": {
+            "$ref": "#/components/schemas/Tag"
+          },
+          "features": {
+            "$ref": "#/components/schemas/ResponseFeatures"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      }
+    }
+  }
+}
